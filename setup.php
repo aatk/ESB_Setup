@@ -1,7 +1,7 @@
 <?php
 
 $SERVERHOST = "https://";
-$SERVERNAME = "admin.btrip.ru";
+$SERVERNAME = "btrip.ru";
 
 $agent = explode(".", $_SERVER["HTTP_HOST"])[0];
 
@@ -23,8 +23,9 @@ function CreatNewDir($dirinfo)
 
 if (isset($_GET["loadfilefromserver"])) {
     $serverfilename = $_GET["filename"];
+    $serverid = $_GET["id"];
 
-    $content = file_get_contents($SERVERHOST . $SERVERNAME . "/Setup/GetFile/" . $serverfilename);
+    $content = file_get_contents($SERVERHOST . $SERVERNAME . "/Setup/GetFile/$serverid/" . $serverfilename);
     if ($content != "") {
         $filedir = explode("/", $serverfilename);
         if (count($filedir) > 0) {
@@ -175,23 +176,20 @@ if (isset($_POST["finish"])) {
     <meta name="msapplication-tap-highlight" content="no">
 
 
-    <link rel="stylesheet" href="<? echo $SERVERHOST . $SERVERNAME ?>/css/lib/bootstrap.min.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" >
 
-    <script type="text/javascript" src="<? echo $SERVERHOST . $SERVERNAME ?>/js/lib/jquery.min.js"></script>
-    <script type="text/javascript" src="<? echo $SERVERHOST . $SERVERNAME ?>/js/lib/jquery.json.min.js"></script>
-    <script type="text/javascript" src="<? echo $SERVERHOST . $SERVERNAME ?>/js/lib/bootstrap.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-json/2.6.0/jquery.json.min.js" integrity="sha256-Ac6pM19lP690qI07nePO/yY6Ut3c7KM9AgNdnc5LtrI=" crossorigin="anonymous"></script>
+
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
 
-    <link href="<? echo $SERVERHOST . $SERVERNAME ?>/js/lib/SmartWizard/dist/css/smart_wizard_theme_arrows.css"
-          rel="stylesheet"
-          type="text/css"/>
+    <link href="<? echo $SERVERHOST . $SERVERNAME ?>/js/lib/SmartWizard/css/smart_wizard_theme_arrows.css" rel="stylesheet" type="text/css"/>
+    <script src="<? echo $SERVERHOST . $SERVERNAME ?>/js/lib/SmartWizard/js/jquery.smartWizard.min.js" type="text/javascript"></script>
 
-    <script src="<? echo $SERVERHOST . $SERVERNAME ?>/js/lib/SmartWizard/dist/js/jquery.smartWizard.min.js"
-            type="text/javascript"></script>
-
-    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery-form-validator/2.3.26/jquery.form-validator.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-form-validator/2.3.26/jquery.form-validator.min.js"></script>
 
     <script type="text/javascript"
             src="<? echo $SERVERHOST . $SERVERNAME ?>/js/controllers/btripcontrollers.js"></script>
@@ -702,11 +700,12 @@ if (isset($_POST["finish"])) {
         },
 
         /* STEP 2 */
-        LoadFileFromServer: function (filename) {
+        LoadFileFromServer: function (id, filename) {
 
             var FormData = {
                 "loadfilefromserver": true,
-                "filename": filename
+                "filename": filename,
+                "id": id
             };
             var p = $.get(servername + "/setup.php", FormData);
             p.done(function (data) {
@@ -721,6 +720,9 @@ if (isset($_POST["finish"])) {
         GetFileList: function () {
             var p = $.get(remoteservername + "/Setup/GetFileList");
             p.done(function (data) {
+
+                var id = data.id;
+                var files = data.files;
                 Controllers.PushNotificatoin("Load file list");
 
                 var filestable = $('#filestable').DataTable({
@@ -728,8 +730,8 @@ if (isset($_POST["finish"])) {
                     "ordering": false,
                     "info": false
                 });
-                $.each(data, function ($key, $value) {
-                    checkfile = Model.LoadFileFromServer($value);
+                $.each(files, function ($key, $value) {
+                    checkfile = Model.LoadFileFromServer(id, $value);
                     filestable.row.add([
                         "",
                         $value
