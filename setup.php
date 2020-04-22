@@ -658,6 +658,8 @@ if (isset($_POST["finish"])) {
                 if (Model.CheckList['LoadCore'] == false) {
                     Model.GetFileList();
                     result = true;
+                } else {
+                    result = true;
                 }
             }
 
@@ -668,7 +670,10 @@ if (isset($_POST["finish"])) {
                             Model.SetDB();
                             result = true;
                         }
+
                     }
+                } else {
+                    result = true;
                 }
             }
 
@@ -676,6 +681,10 @@ if (isset($_POST["finish"])) {
                 //
                 if (Model.CheckList['InstallCore'] == false) {
                     result = Model.InstallCore();
+                    result = true;
+                }
+                else {
+                    result = true;
                 }
             }
 
@@ -685,6 +694,8 @@ if (isset($_POST["finish"])) {
                     if ($("#FormDataSU").isValid()) {
                         result = Model.SetSU();
                     }
+                } else {
+                    result = true;
                 }
             }
 
