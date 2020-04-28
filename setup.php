@@ -34,6 +34,16 @@ if (isset($_GET["loadfilefromserver"])) {
 
         file_put_contents($serverfilename, $content);
 
+        if (file_exists("ht.access")) {
+            unlink(".htaccess");
+            rename("ht.access", ".htaccess");
+        }
+
+        if (file_exists("private/settings/ht.access")) {
+            unlink("private/settings/.htaccess");
+            rename("private/settings/ht.access", "private/settings/.htaccess");
+        }
+
         echo "loadcomplite";
     } else {
         echo "loaderror";
