@@ -130,14 +130,21 @@ if (isset($_GET["installcore"])) {
     exit(0);
 }
 
+
+
 if (isset($_POST["setsu"])) {
     $result = false;
     require_once 'autoload.php'; //подключаем автозагрузку доп.классов, система должна быть уже устновлена
     require_once 'settings.php'; //подключаем автозагрузку доп.классов
     if (class_exists("Auth")) {
         $Auth = new Auth();
-        $res = $Auth->adduser($_POST["suusername"], $_POST["supassword"], true, 1);
-        //echo json_encode($result, JSON_UNESCAPED_UNICODE);
+        if ($Auth->havelogin($_POST["suusername"])["result"]){
+            //$res = $Auth->moduser();
+
+        } else {
+            $res = $Auth->adduser($_POST["suusername"], $_POST["supassword"], true, 1);
+
+        }
         $result = $res["result"];
     } else {
         echo "CRITICAL ERROR, AUTH NOT FOUND";
@@ -196,21 +203,21 @@ if (isset($_POST["finish"])) {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
 
-    <link href="<? echo $SERVERHOST . $SERVERNAME ?>/js/lib/SmartWizard/css/smart_wizard_theme_arrows.css" rel="stylesheet" type="text/css"/>
-    <script src="<? echo $SERVERHOST . $SERVERNAME ?>/js/lib/SmartWizard/js/jquery.smartWizard.min.js" type="text/javascript"></script>
+    <link href="<?php echo $SERVERHOST . $SERVERNAME ?>/js/lib/SmartWizard/css/smart_wizard_theme_arrows.css" rel="stylesheet" type="text/css"/>
+    <script src="<?php echo $SERVERHOST . $SERVERNAME ?>/js/lib/SmartWizard/js/jquery.smartWizard.min.js" type="text/javascript"></script>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-form-validator/2.3.26/jquery.form-validator.min.js"></script>
 
     <script type="text/javascript"
-            src="<? echo $SERVERHOST . $SERVERNAME ?>/js/controllers/btripcontrollers.js"></script>
+            src="<?php echo $SERVERHOST . $SERVERNAME ?>/js/controllers/btripcontrollers.js"></script>
 
 
     <style>
         @font-face {
             font-family: 'Pe-icon-7-stroke';
             /*            src: url(*/
-        <?// echo $SERVERHOST . $SERVERNAME ?>/*/assets/fonts/Pe-icon-7-stroke.eot);*/
-            src: url(<? echo $SERVERHOST . $SERVERNAME ?>/assets/fonts/Pe-icon-7-stroke.eot?#iefixd7yf1v) format("embedded-opentype"), url(<? echo $SERVERHOST . $SERVERNAME ?>/assets/fonts/Pe-icon-7-stroke.woff) format("woff"), url(<? echo $SERVERHOST . $SERVERNAME ?>/assets/fonts/Pe-icon-7-stroke.ttf) format("truetype"), url(<? echo $SERVERHOST . $SERVERNAME ?>/assets/fonts/Pe-icon-7-stroke.svg#Pe-icon-7-stroke) format("svg");
+        <?php// echo $SERVERHOST . $SERVERNAME ?>/*/assets/fonts/Pe-icon-7-stroke.eot);*/
+            src: url(<?php echo $SERVERHOST . $SERVERNAME ?>/assets/fonts/Pe-icon-7-stroke.eot?#iefixd7yf1v) format("embedded-opentype"), url(<?php echo $SERVERHOST . $SERVERNAME ?>/assets/fonts/Pe-icon-7-stroke.woff) format("woff"), url(<?php echo $SERVERHOST . $SERVERNAME ?>/assets/fonts/Pe-icon-7-stroke.ttf) format("truetype"), url(<?php echo $SERVERHOST . $SERVERNAME ?>/assets/fonts/Pe-icon-7-stroke.svg#Pe-icon-7-stroke) format("svg");
             font-weight: normal;
             font-style: normal
         }
@@ -490,7 +497,7 @@ if (isset($_POST["finish"])) {
                                                            id="database_name"
                                                            placeholder="localhost"
                                                            type="text"
-                                                           value="<? echo $agent; ?>"
+                                                           value="<?php echo $agent; ?>"
                                                            class="form-control" data-validation="required">
                                                 </div>
 
@@ -611,7 +618,7 @@ if (isset($_POST["finish"])) {
 <script>
     var x = window.location;
     var servername = x.origin;
-    var remoteservername = "<? echo $SERVERHOST . $SERVERNAME ?>";
+    var remoteservername = "<?php echo $SERVERHOST . $SERVERNAME ?>";
 
 
     var Model = {
