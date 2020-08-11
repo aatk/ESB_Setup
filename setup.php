@@ -9,166 +9,217 @@ $agent = explode(".", $_SERVER["HTTP_HOST"])[0];
 function CreatNewDir($dirinfo)
 {
     unset($dirinfo[count($dirinfo) - 1]);
-
+    
     $dirpath = [];
-    foreach ($dirinfo as $dir) {
+    foreach ($dirinfo as $dir)
+    {
         $dirpath[] = $dir;
-
+        
         $dirstring = implode("/", $dirpath);
-        if (!file_exists($dirstring)) {
+        if (!file_exists($dirstring))
+        {
             mkdir($dirstring);
         }
     }
 }
 
-if (isset($_GET["loadfilefromserver"])) {
+if (isset($_GET["loadfilefromserver"]))
+{
     $serverfilename = $_GET["filename"];
-    $serverid = $_GET["id"];
-
+    $serverid       = $_GET["id"];
+    
     $content = file_get_contents($SERVERHOST . $SERVERNAME . "/Setup/GetFile/$serverid/" . $serverfilename);
-    if ($content != "") {
+    if ($content != "")
+    {
         $filedir = explode("/", $serverfilename);
-        if (count($filedir) > 0) {
+        if (count($filedir) > 0)
+        {
             CreatNewDir($filedir);
         }
-
+        
         file_put_contents($serverfilename, $content);
-
-        if (file_exists("ht.access")) {
-            unlink(".htaccess");
-            rename("ht.access", ".htaccess");
-        }
-
-        if (file_exists("private/settings/ht.access")) {
-            unlink("private/settings/.htaccess");
-            rename("private/settings/ht.access", "private/settings/.htaccess");
-        }
-
+        
         echo "loadcomplite";
-    } else {
+    }
+    else
+    {
         echo "loaderror";
     }
     exit(0);
 }
 
-
-if (isset($_POST["setconnectors"])) {
-    //
-    $Info = [
-        ["database_type" => $_POST["database_type"]],
-        ["server" => $_POST["server"]],
-        ["database_name" => $_POST["database_name"]],
-        ["username" => $_POST["username"]],
-        ["password" => $_POST["password"]],
-        ["charset" => "utf8"]
-    ];
-
-    $data = [
-        "Name" => "connectionInfo",
-        "Info" => $Info
-    ];
-
-    $jsondata = json_encode($data, JSON_UNESCAPED_UNICODE);
-    $filepath = ["private", "settings", "connectionInfo.json"];
-    CreatNewDir($filepath);
-    file_put_contents(implode("/", $filepath), $jsondata);
-
+if (isset($_GET["htaccess"]))
+{
+    if (file_exists("ht.access"))
+    {
+        unlink(".htaccess");
+        rename("ht.access", ".htaccess");
+    }
+    
+    if (file_exists("private/settings/ht.access"))
+    {
+        unlink("private/settings/.htaccess");
+        rename("private/settings/ht.access", "private/settings/.htaccess");
+    }
+    
+    echo "ok";
     exit(0);
 }
 
 
-if (isset($_POST["testdb"])) {
+if (isset($_POST["setconnectors"]))
+{
     //
     $Info = [
-        "database_type" => $_POST["database_type"],
-        "server" => $_POST["server"],
-        "database_name" => $_POST["database_name"],
-        "username" => $_POST["username"],
-        "password" => $_POST["password"],
-        "charset" => "utf8"
+        [ "database_type" => $_POST["database_type"] ],
+        [ "server" => $_POST["server"] ],
+        [ "database_name" => $_POST["database_name"] ],
+        [ "username" => $_POST["username"] ],
+        [ "password" => $_POST["password"] ],
+        [ "charset" => "utf8" ],
     ];
+    
+    $data = [
+        "Name" => "connectionInfo",
+        "Info" => $Info,
+    ];
+    
+    $jsondata = json_encode($data, JSON_UNESCAPED_UNICODE);
+    $filepath = [ "private", "settings", "connectionInfo.json" ];
+    CreatNewDir($filepath);
+    file_put_contents(implode("/", $filepath), $jsondata);
+    
+    exit(0);
+}
 
+
+if (isset($_POST["testdb"]))
+{
+    //
+    $serverdata = explode(":", $_POST["server"]);
+    
+    $Info = [
+        "database_type" => $_POST["database_type"],
+        "server"        => $serverdata[0],
+        "database_name" => $_POST["database_name"],
+        "username"      => $_POST["username"],
+        "password"      => $_POST["password"],
+        "charset"       => "utf8",
+    ];
+    
+    if (isset($serverdata[1]))
+    {
+        $Info["port"] = $serverdata[1];
+    }
+    
     $result = false;
-
+    
     require_once 'autoload.php'; //подключаем автозагрузку доп.классов, система должна быть уже устновлена
-
-    if (class_exists("db_connect")) {
-        try {
+    
+    if (class_exists("db_connect"))
+    {
+        try
+        {
             $db_connect = new db_connect($Info);
-            $result = true;
-        } catch (Exception $e) {
+            $result     = true;
+        }
+        catch (Exception $e)
+        {
             $result = false;
         }
     }
-
-    if (!$result) {
+    
+    if (!$result)
+    {
         header('HTTP/1.1 500 Internal Server Error');
     }
-
+    
     exit(0);
 }
 
 
-if (isset($_GET["installcore"])) {
-
+if (isset($_GET["installcore"]))
+{
+    
     $result = false;
-
+    
     require_once 'autoload.php'; //подключаем автозагрузку доп.классов, система должна быть уже устновлена
     require_once 'settings.php'; //подключаем автозагрузку доп.классов
-    if (class_exists("System")) {
-        $System = new System();
+    if (class_exists("System"))
+    {
+        $System  = new System();
         $content = $System->UpdateSystem();
         echo $content;
         $result = true;
-    } else {
+    }
+    else
+    {
         echo "CRITICAL ERROR, CORE NOT FOUND";
     }
-
-    if (!$result) {
+    
+    if (!$result)
+    {
         header('HTTP/1.1 500 Internal Server Error');
     }
     exit(0);
 }
 
 
-
-if (isset($_POST["setsu"])) {
+if (isset($_POST["setsu"]))
+{
     $result = false;
-    require_once 'autoload.php'; //подключаем автозагрузку доп.классов, система должна быть уже устновлена
+    require_once 'autoload.php'; //подключаем автозагрузку доп.классов, система должна быть уже установлена
     require_once 'settings.php'; //подключаем автозагрузку доп.классов
-    if (class_exists("Auth")) {
+    if (class_exists("Auth"))
+    {
         $Auth = new Auth();
-        if ($Auth->havelogin($_POST["suusername"])["result"]){
+        if ($Auth->havelogin($_POST["suusername"])["result"])
+        {
             //$res = $Auth->moduser();
-
-        } else {
+            $res["result"] = true;
+        }
+        else
+        {
             $res = $Auth->adduser($_POST["suusername"], $_POST["supassword"], true, 1);
-
+            
         }
         $result = $res["result"];
-    } else {
+    }
+    else
+    {
         echo "CRITICAL ERROR, AUTH NOT FOUND";
     }
-
-    if (!$result) {
+    
+    if (!$result)
+    {
         header('HTTP/1.1 500 Internal Server Error');
     }
-
+    else
+    {
+        header('HTTP/1.1 200 OK');
+        print_r("ok");
+    }
+    
     exit(0);
 }
 
-if (isset($_POST["finish"])) {
+if (isset($_POST["finish"]))
+{
     unlink("setup.php");
-    if (file_exists("setup.php")) {
+    if (file_exists("setup.php"))
+    {
         $result = false;
-    } else {
+    }
+    else
+    {
         $result = true;
     }
-
-    if (!$result) {
+    
+    if (!$result)
+    {
         header('HTTP/1.1 500 Internal Server Error');
     }
-
+    
     exit(0);
 }
 
@@ -179,21 +230,21 @@ if (isset($_POST["finish"])) {
 <!doctype html>
 <html lang="en">
 
-<meta http-equiv="content-type" content="text/html;charset=UTF-8"/>
+<meta http-equiv="content-type" content="text/html;charset=UTF-8" />
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta http-equiv="Content-Language" content="en">
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <title>Setup BTRIP API / CMS</title>
     <meta name="viewport"
-          content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, shrink-to-fit=no"/>
+          content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, shrink-to-fit=no" />
     <meta name="description" content="">
     <!-- Disable tap highlight on IE -->
     <meta name="msapplication-tap-highlight" content="no">
 
 
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" >
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
 
     <script src="https://code.jquery.com/jquery-3.4.1.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-json/2.6.0/jquery.json.min.js" integrity="sha256-Ac6pM19lP690qI07nePO/yY6Ut3c7KM9AgNdnc5LtrI=" crossorigin="anonymous"></script>
@@ -203,7 +254,7 @@ if (isset($_POST["finish"])) {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
 
-    <link href="<?php echo $SERVERHOST . $SERVERNAME ?>/js/lib/SmartWizard/css/smart_wizard_theme_arrows.css" rel="stylesheet" type="text/css"/>
+    <link href="<?php echo $SERVERHOST . $SERVERNAME ?>/js/lib/SmartWizard/css/smart_wizard_theme_arrows.css" rel="stylesheet" type="text/css" />
     <script src="<?php echo $SERVERHOST . $SERVERNAME ?>/js/lib/SmartWizard/js/jquery.smartWizard.min.js" type="text/javascript"></script>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-form-validator/2.3.26/jquery.form-validator.min.js"></script>
@@ -365,34 +416,34 @@ if (isset($_POST["finish"])) {
 
                             <div id="smartwizard">
                                 <ul>
-                                    <li><a href="#step-1">License<br/>
+                                    <li><a href="#step-1">License<br />
                                             <small>License information</small>
                                         </a></li>
-                                    <li><a href="#step-2">Download<br/>
+                                    <li><a href="#step-2">Download<br />
                                             <small>Download system</small>
                                         </a></li>
                                     <li>
-                                        <a href="#step-3">MySQL<br/>
+                                        <a href="#step-3">MySQL<br />
                                             <small>Setup DB</small>
                                         </a>
                                     </li>
                                     <li>
-                                        <a href="#step-4">Install CORE<br/>
+                                        <a href="#step-4">Install CORE<br />
                                             <small>Setup core</small>
                                         </a>
                                     </li>
                                     <li>
-                                        <a href="#step-5">Set SU<br/>
+                                        <a href="#step-5">Set SU<br />
                                             <small>Setup SU</small>
                                         </a>
                                     </li>
-<!--                                    <li>-->
-<!--                                        <a href="#step-6">Addon<br/>-->
-<!--                                            <small>Install Addon</small>-->
-<!--                                        </a>-->
-<!--                                    </li>-->
+                                    <!--                                    <li>-->
+                                    <!--                                        <a href="#step-6">Addon<br/>-->
+                                    <!--                                            <small>Install Addon</small>-->
+                                    <!--                                        </a>-->
+                                    <!--                                    </li>-->
                                     <li>
-                                        <a href="#step-7">Finish<br/>
+                                        <a href="#step-7">Finish<br />
                                             <small>End Install</small>
                                         </a>
                                     </li>
@@ -411,46 +462,46 @@ if (isset($_POST["finish"])) {
                                                 is
                                                 left
                                                 intact.</p>
-                                            <br/>
+                                            <br />
                                             <p>MIT License</p>
 
 
-                                            <p>Copyright (c) 2020 Tkachenko Alexander<br/>
+                                            <p>Copyright (c) 2020 Tkachenko Alexander<br />
                                                 <a href="https://btrip.ru">https://btrip.ru</a> <a href="https://info4b.ru">https://info4b.ru</a>
                                             </p>
                                             <p>
                                                 Permission is hereby granted, free of charge, to any person obtaining a
-                                                copy<br/>
+                                                copy<br />
                                                 of this software and associated documentation files (the "Software"), to
-                                                deal<br/>
+                                                deal<br />
                                                 in the Software without restriction, including without limitation the
-                                                rights<br/>
+                                                rights<br />
                                                 to use, copy, modify, merge, publish, distribute, sublicense, and/or
-                                                sell<br/>
+                                                sell<br />
                                                 copies of the Software, and to permit persons to whom the Software
-                                                is<br/>
+                                                is<br />
                                                 furnished to do so, subject to the following conditions:
                                             </p>
                                             <p>
                                                 The above copyright notice and this permission notice shall be included
                                                 in
-                                                all<br/>
+                                                all<br />
                                                 copies or substantial portions of the Software.
                                             </p>
                                             <p>
                                                 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-                                                OR<br/>
+                                                OR<br />
                                                 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-                                                MERCHANTABILITY,<br/>
+                                                MERCHANTABILITY,<br />
                                                 FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
-                                                THE<br/>
+                                                THE<br />
                                                 AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
-                                                OTHER<br/>
+                                                OTHER<br />
                                                 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-                                                FROM,<br/>
+                                                FROM,<br />
                                                 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
                                                 IN
-                                                THE<br/>
+                                                THE<br />
                                                 SOFTWARE.
                                             </p>
                                         </div>
@@ -520,7 +571,7 @@ if (isset($_POST["finish"])) {
                                                                 <input
                                                                         name="password" id="password"
                                                                         placeholder="Password"
-                                                                        type="password" class="form-control"  data-validation="required">
+                                                                        type="password" class="form-control" data-validation="required">
                                                             </div>
                                                         </div>
                                                     </div>
@@ -586,11 +637,11 @@ if (isset($_POST["finish"])) {
                                             </form>
                                         </div>
                                     </div>
-<!--                                    <div id="step-6" class="">-->
-<!--                                        <div class="card-body">-->
-<!--                                            <h2>Select Addons</h2>-->
-<!--                                        </div>-->
-<!--                                    </div>-->
+                                    <!--                                    <div id="step-6" class="">-->
+                                    <!--                                        <div class="card-body">-->
+                                    <!--                                            <h2>Select Addons</h2>-->
+                                    <!--                                        </div>-->
+                                    <!--                                    </div>-->
                                     <div id="step-7" class="">
                                         <div class="card-body">
                                             <h2>CONGRATULATIONS!!!</h2>
@@ -616,257 +667,327 @@ if (isset($_POST["finish"])) {
 
 
 <script>
-    var x = window.location;
-    var servername = x.origin;
+    var x                = window.location;
+    var servername       = x.origin;
     var remoteservername = "<?php echo $SERVERHOST . $SERVERNAME ?>";
 
 
     var Model = {
-
-        CheckList : {
-            'LoadCore':  false,
+    
+        CheckList: {
+            'LoadCore'   : false,
             'DBConnected': false,
             'InstallCore': false,
-            'SetSU': false
+            'SetSU'      : false
         },
-
-        OnLoad: function () {
-
+    
+        OnLoad: function ()
+        {
+        
             $.ajaxSetup({
                 async: false
             });
-
+        
             $('#smartwizard').smartWizard({
-                selected: 0,
-                theme: 'arrows',
+                selected       : 0,
+                theme          : 'arrows',
                 toolbarSettings: {
-                    toolbarPosition: 'top', // none, top, bottom, both
+                    toolbarPosition      : 'top', // none, top, bottom, both
                     toolbarButtonPosition: 'right', // left, right
-                    showNextButton: true, // show/hide a Next button
-                    showPreviousButton: true // show/hide a Previous button
+                    showNextButton       : true, // show/hide a Next button
+                    showPreviousButton   : true // show/hide a Previous button
                 }
             });
-
+        
             $("#smartwizard").on("leaveStep", Model.ListSteps);
-
+        
             $('#loadfiles').on("click", Model.GetFileList);
-
+        
             $('#testdb').on("click", Model.TestDB);
             $('#setdata').on("click", Model.SetDB);
             $('#installcore').on("click", Model.InstallCore);
-
+        
             $('#setsu').on("click", Model.SetSU);
-
+        
             $('#unlinksetup').on("click", Model.Finish);
-
+        
             $.validate();
             //$('#filestable').DataTable();
         },
-
-        ListSteps : function(e, anchorObject, stepNumber, stepDirection) {
-
+    
+        ListSteps: function (e, anchorObject, stepNumber, stepDirection)
+        {
+        
             var result = false;
-
-            if (stepNumber == 0) {
+        
+            if (stepNumber == 0)
+            {
                 result = true;
             }
-
-            else if ((stepNumber == 1) && (stepDirection == "forward")) {
-                if (Model.CheckList['LoadCore'] == false) {
+        
+            else if ((stepNumber == 1) && (stepDirection == "forward"))
+            {
+                if (Model.CheckList['LoadCore'] == false)
+                {
                     Model.GetFileList();
                     result = true;
-                } else {
+                }
+                else
+                {
                     result = true;
                 }
             }
-
-            else if ((stepNumber == 2) && (stepDirection == "forward")) {
-                if (Model.CheckList['DBConnected'] == false) {
-                    if ($("#FormData").isValid()) {
-                        if (Model.TestDB()) {
+        
+            else if ((stepNumber == 2) && (stepDirection == "forward"))
+            {
+                if (Model.CheckList['DBConnected'] == false)
+                {
+                    if ($("#FormData").isValid())
+                    {
+                        if (Model.TestDB())
+                        {
                             Model.SetDB();
                             result = true;
                         }
-
+                    
                     }
-                } else {
+                }
+                else
+                {
                     result = true;
                 }
             }
-
-            else if ((stepNumber == 3) && (stepDirection == "forward")) {
+        
+            else if ((stepNumber == 3) && (stepDirection == "forward"))
+            {
                 //
-                if (Model.CheckList['InstallCore'] == false) {
+                if (Model.CheckList['InstallCore'] == false)
+                {
                     result = Model.InstallCore();
                     result = true;
                 }
-                else {
+                else
+                {
                     result = true;
                 }
             }
-
-            else if ((stepNumber == 4) && (stepDirection == "forward")) {
+        
+            else if ((stepNumber == 4) && (stepDirection == "forward"))
+            {
                 //
-                if (Model.CheckList['SetSU'] == false) {
-                    if ($("#FormDataSU").isValid()) {
+                if (Model.CheckList['SetSU'] == false)
+                {
+                    if ($("#FormDataSU").isValid())
+                    {
                         result = Model.SetSU();
                     }
-                } else {
+                }
+                else
+                {
                     result = true;
                 }
             }
-
-            else {
+        
+            else
+            {
                 result = true;
             }
-
+        
             return result;
         },
-
-        ShowStep : function (Step) {
-            document.location = servername+"/setup.php#step-"+Step;
+    
+        ShowStep: function (Step)
+        {
+            document.location = servername + "/setup.php#step-" + Step;
         },
-
+    
         /* STEP 2 */
-        LoadFileFromServer: function (id, filename) {
-
+        LoadFileFromServer: function (id, filename)
+        {
+        
             var FormData = {
                 "loadfilefromserver": true,
-                "filename": filename,
-                "id": id
+                "filename"          : filename,
+                "id"                : id
             };
-            var p = $.get(servername + "/setup.php", FormData);
-            p.done(function (data) {
+            var p        = $.get(servername + "/setup.php", FormData);
+            p.done(function (data)
+            {
                 Controllers.PushNotificatoin("Load file " + filename);
             });
-            p.fail(function (data) {
+            p.fail(function (data)
+            {
                 Controllers.PushNotificatoin("Error load file " + filename);
             });
-
+        
         },
-
-        GetFileList: function () {
+    
+        GetFileList: function ()
+        {
             var p = $.get(remoteservername + "/Setup/GetFileList");
-            p.done(function (data) {
-
-                var id = data.id;
+            p.done(function (data)
+            {
+            
+                var id    = data.id;
                 var files = data.files;
                 Controllers.PushNotificatoin("Load file list");
-
+            
                 var filestable = $('#filestable').DataTable({
-                    "paging": false,
+                    "paging"  : false,
                     "ordering": false,
-                    "info": false
+                    "info"    : false
                 });
-                $.each(files, function ($key, $value) {
+                $.each(files, function ($key, $value)
+                {
                     checkfile = Model.LoadFileFromServer(id, $value);
                     filestable.row.add([
                         "",
                         $value
                     ]).draw(false);
                 });
+            
+                Model.UnlinkHT();
                 Model.CheckList['LoadCore'] = true;
             });
-            p.fail(function (data) {
+            p.fail(function (data)
+            {
                 Controllers.PushNotificatoin("Error load file list");
             });
         },
-
+    
+        UnlinkHT: function ()
+        {
+            var FormData = {
+                "htaccess": true,
+            };
+            var p        = $.get(servername + "/setup.php", FormData);
+            p.done(function (data)
+            {
+                Controllers.PushNotificatoin("Complite install");
+            });
+            p.fail(function (data)
+            {
+                Controllers.PushNotificatoin("Error install");
+            });
+        },
+    
+    
         /* STEP 3 */
-        TestDB: function () {
+        TestDB: function ()
+        {
             //
-            var result = false;
+            var result   = false;
             var FormData = $("#FormData").serializeArray();
-
+        
             delete FormData[0];
             FormData[0] = {name: "testdb", value: true};
-
+        
             var p = $.post(servername + "/setup.php", FormData);
-            p.done(function (data) {
+            p.done(function (data)
+            {
                 Controllers.PushNotificatoin("Test DB Connection");
                 result = true;
             });
-            p.fail(function (data) {
+            p.fail(function (data)
+            {
                 Controllers.PushNotificatoin("Error Test DB Connection");
             });
-
+        
             return result;
         },
-
-        SetDB: function () {
-            if( !$("#FormData").isValid() ) {
+    
+        SetDB: function ()
+        {
+            if (!$("#FormData").isValid())
+            {
                 Controllers.PushNotificatoin("Error valid form");
-            } else {
-
+            }
+            else
+            {
+            
                 var FormData = $("#FormData").serializeArray();
-                var p = $.post(servername + "/setup.php", FormData);
-
-                p.done(function (data) {
+                var p        = $.post(servername + "/setup.php", FormData);
+            
+                p.done(function (data)
+                {
                     Controllers.PushNotificatoin("Install data");
                     Model.CheckList['DBConnected'] = true;
                 });
-                p.fail(function (data) {
+                p.fail(function (data)
+                {
                     Controllers.PushNotificatoin("Error install data ");
                 });
             }
         },
-
+    
         /* STEP 4 */
-        InstallCore: function () {
-            var result = false;
+        InstallCore: function ()
+        {
+            var result   = false;
             var FormData = {
                 "installcore": true
             };
-            var p = $.get(servername + "/setup.php", FormData);
-            p.done(function (data) {
+            var p        = $.get(servername + "/setup.php", FormData);
+            p.done(function (data)
+            {
                 $("#logconsole").html(data);
                 Controllers.PushNotificatoin("Install CORE");
                 Model.CheckList['InstallCore'] = true;
-                result = true;
+                result                         = true;
             });
-            p.fail(function (data) {
+            p.fail(function (data)
+            {
                 Controllers.PushNotificatoin("Error install CORE ");
             });
-
+        
             return result;
         },
-
+    
         /* STEP 5 */
-        SetSU: function () {
+        SetSU: function ()
+        {
             var result = false;
-
-            if( !$("#FormDataSU").isValid() ) {
+        
+            if (!$("#FormDataSU").isValid())
+            {
                 Controllers.PushNotificatoin("Error valid form");
-            } else {
+            }
+            else
+            {
                 var FormData = $("#FormDataSU").serializeArray();
-                var p = $.post(servername + "/setup.php", FormData);
-                p.done(function (data) {
+                var p        = $.post(servername + "/setup.php", FormData);
+                p.done(function (data)
+                {
                     Controllers.PushNotificatoin("Install SU");
                     Model.CheckList['SetSU'] = true;
-                    result = true;
+                    result                   = true;
                 });
-                p.fail(function (data) {
+                p.fail(function (data)
+                {
                     Controllers.PushNotificatoin("Error install SU");
                 });
             }
-
+        
             return result;
         },
-
-        Finish: function () {
+    
+        Finish: function ()
+        {
             var FormData = {
                 "finish": true
             };
-            var p = $.post(servername + "/setup.php", FormData);
-            p.done(function (data) {
+            var p        = $.post(servername + "/setup.php", FormData);
+            p.done(function (data)
+            {
                 document.location = servername;
             });
-            p.fail(function (data) {
+            p.fail(function (data)
+            {
                 Controllers.PushNotificatoin("Error finish install");
             });
-
+        
         }
-
+    
     };
 
 
