@@ -1,5 +1,5 @@
 <?php
-
+session_start();
 $SERVERHOST = "https://";
 $SERVERNAME = "btrip.ru";
 
@@ -45,6 +45,7 @@ if (isset($_GET["loadfilefromserver"]))
     {
         echo "loaderror";
     }
+    unset($_SESSION["db_connect"]);
     exit(0);
 }
 
@@ -56,13 +57,14 @@ if (isset($_GET["htaccess"]))
         rename("ht.access", ".htaccess");
     }
     
-    if (file_exists("private/settings/ht.access"))
+    if (file_exists("models/settings/ht.access"))
     {
-        unlink("private/settings/.htaccess");
-        rename("private/settings/ht.access", "private/settings/.htaccess");
+        unlink("models/settings/.htaccess");
+        rename("models/settings/ht.access", "models/settings/.htaccess");
     }
     
     echo "ok";
+    unset($_SESSION["db_connect"]);
     exit(0);
 }
 
@@ -70,14 +72,21 @@ if (isset($_GET["htaccess"]))
 if (isset($_POST["setconnectors"]))
 {
     //
+    $serverdata = explode(":", $_POST["server"]);
+    
     $Info = [
         [ "database_type" => $_POST["database_type"] ],
-        [ "server" => $_POST["server"] ],
+        [ "server" => $serverdata[0] ],
         [ "database_name" => $_POST["database_name"] ],
         [ "username" => $_POST["username"] ],
         [ "password" => $_POST["password"] ],
         [ "charset" => "utf8" ],
     ];
+    
+    if (isset($serverdata[1]))
+    {
+        $Info[]["port"] = $serverdata[1];
+    }
     
     $data = [
         "Name" => "connectionInfo",
@@ -85,10 +94,11 @@ if (isset($_POST["setconnectors"]))
     ];
     
     $jsondata = json_encode($data, JSON_UNESCAPED_UNICODE);
-    $filepath = [ "private", "settings", "connectionInfo.json" ];
+    $filepath = [ "models", "settings", "connectionInfo.json" ];
     CreatNewDir($filepath);
     file_put_contents(implode("/", $filepath), $jsondata);
     
+    unset($_SESSION["db_connect"]);
     exit(0);
 }
 
@@ -120,8 +130,9 @@ if (isset($_POST["testdb"]))
     {
         try
         {
-            $db_connect = new db_connect($Info);
-            $result     = true;
+            $db_connect                        = new db_connect($Info);
+            $_SESSION["i4b"]["connectionInfo"] = $Info;
+            $result                            = true;
         }
         catch (Exception $e)
         {
@@ -134,6 +145,7 @@ if (isset($_POST["testdb"]))
         header('HTTP/1.1 500 Internal Server Error');
     }
     
+    unset($_SESSION["db_connect"]);
     exit(0);
 }
 
@@ -161,6 +173,8 @@ if (isset($_GET["installcore"]))
     {
         header('HTTP/1.1 500 Internal Server Error');
     }
+    
+    unset($_SESSION["db_connect"]);
     exit(0);
 }
 
@@ -200,6 +214,7 @@ if (isset($_POST["setsu"]))
         print_r("ok");
     }
     
+    unset($_SESSION["db_connect"]);
     exit(0);
 }
 
@@ -220,6 +235,7 @@ if (isset($_POST["finish"]))
         header('HTTP/1.1 500 Internal Server Error');
     }
     
+    unset($_SESSION["db_connect"]);
     exit(0);
 }
 
