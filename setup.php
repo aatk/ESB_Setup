@@ -6,245 +6,276 @@ $SERVERNAME = "btrip.ru";
 $agent = explode(".", $_SERVER["HTTP_HOST"])[0];
 
 
-function CreatNewDir($dirinfo)
+class Setup
 {
-    unset($dirinfo[count($dirinfo) - 1]);
-    
-    $dirpath = [];
-    foreach ($dirinfo as $dir)
+    private function CreatNewDir($dirinfo)
     {
-        $dirpath[] = $dir;
+        unset($dirinfo[count($dirinfo) - 1]);
         
-        $dirstring = implode("/", $dirpath);
-        if (!file_exists($dirstring))
+        $dirpath = [];
+        foreach ($dirinfo as $dir)
         {
-            mkdir($dirstring);
+            $dirpath[] = $dir;
+            
+            $dirstring = implode("/", $dirpath);
+            if (!file_exists($dirstring))
+            {
+                mkdir($dirstring);
+            }
+        }
+    }
+
+    public function loadfilefromserver($SERVERHOST, $SERVERNAME)
+    {
+        $serverfilename = $_GET["filename"];
+        $serverid       = $_GET["id"];
+        
+        $content = file_get_contents($SERVERHOST . $SERVERNAME . "/Setup/GetFile/$serverid/" . $serverfilename);
+        if ($content != "")
+        {
+            $filedir = explode("/", $serverfilename);
+            if (count($filedir) > 0)
+            {
+                $this->CreatNewDir($filedir);
+            }
+            
+            file_put_contents($serverfilename, $content);
+            
+            echo "loadcomplite";
+        }
+        else
+        {
+            echo "loaderror";
+        }
+    }
+    
+    public function htaccess()
+    {
+        if (file_exists("ht.access"))
+        {
+            unlink(".htaccess");
+            rename("ht.access", ".htaccess");
+        }
+        
+        if (file_exists("models/settings/ht.access"))
+        {
+            unlink("models/settings/.htaccess");
+            rename("models/settings/ht.access", "models/settings/.htaccess");
+        }
+        
+        echo "ok";
+    }
+    
+    public function setconnectors()
+    {
+        $serverdata = explode(":", $_POST["server"]);
+        
+        $Info = [
+            [ "database_type" => $_POST["database_type"] ],
+            [ "server" => $serverdata[0] ],
+            [ "database_name" => $_POST["database_name"] ],
+            [ "username" => $_POST["username"] ],
+            [ "password" => $_POST["password"] ],
+            [ "charset" => "utf8" ],
+        ];
+        
+        if (isset($serverdata[1]))
+        {
+            $Info[]["port"] = $serverdata[1];
+        }
+        
+        $data = [
+            "Name" => "connectionInfo",
+            "Info" => $Info,
+        ];
+        
+        $jsondata = json_encode($data, JSON_UNESCAPED_UNICODE);
+        $filepath = [ "models", "settings", "connectionInfo.json" ];
+        $this->CreatNewDir($filepath);
+        file_put_contents(implode("/", $filepath), $jsondata);
+    }
+    
+    public function testdb()
+    {
+        $serverdata = explode(":", $_POST["server"]);
+        
+        $Info = [
+            "database_type" => $_POST["database_type"],
+            "server"        => $serverdata[0],
+            "database_name" => $_POST["database_name"],
+            "username"      => $_POST["username"],
+            "password"      => $_POST["password"],
+            "charset"       => "utf8",
+        ];
+        
+        if (isset($serverdata[1]))
+        {
+            $Info["port"] = $serverdata[1];
+        }
+        
+        $result = false;
+        
+        require_once 'autoload.php'; //подключаем автозагрузку доп.классов, система должна быть уже устновлена
+        
+        if (class_exists("db_connect"))
+        {
+            try
+            {
+                $db_connect                        = new db_connect($Info);
+                $_SESSION["i4b"]["connectionInfo"] = $Info;
+                $result                            = true;
+            }
+            catch (Exception $e)
+            {
+                $result = false;
+            }
+        }
+        
+        if (!$result)
+        {
+            header('HTTP/1.1 500 Internal Server Error');
+        }
+    }
+    
+    public function installcore()
+    {
+        $result = false;
+        
+        require_once 'autoload.php'; //подключаем автозагрузку доп.классов, система должна быть уже устновлена
+        require_once 'settings.php'; //подключаем автозагрузку доп.классов
+        if (class_exists("System"))
+        {
+            $System  = new System();
+            $content = $System->UpdateSystem();
+            echo $content;
+            $result = true;
+        }
+        else
+        {
+            echo "CRITICAL ERROR, CORE NOT FOUND";
+        }
+        
+        if (!$result)
+        {
+            header('HTTP/1.1 500 Internal Server Error');
+        }
+    }
+    
+    public function setsu()
+    {
+        $result = false;
+        require_once 'autoload.php'; //подключаем автозагрузку доп.классов, система должна быть уже установлена
+        require_once 'settings.php'; //подключаем автозагрузку доп.классов
+        if (class_exists("Auth"))
+        {
+            $Auth = new Auth();
+            if ($Auth->havelogin($_POST["suusername"])["result"])
+            {
+                //$res = $Auth->moduser();
+                $res["result"] = true;
+            }
+            else
+            {
+                $res = $Auth->adduser($_POST["suusername"], $_POST["supassword"], true, 1);
+                
+            }
+            $result = $res["result"];
+        }
+        else
+        {
+            echo "CRITICAL ERROR, AUTH NOT FOUND";
+        }
+        
+        if (!$result)
+        {
+            header('HTTP/1.1 500 Internal Server Error');
+        }
+        else
+        {
+            header('HTTP/1.1 200 OK');
+            print_r("ok");
+        }
+    }
+    
+    public function finish()
+    {
+        unlink("setup.php");
+        if (file_exists("setup.php"))
+        {
+            $result = false;
+        }
+        else
+        {
+            $result = true;
+        }
+        
+        if (!$result)
+        {
+            header('HTTP/1.1 500 Internal Server Error');
         }
     }
 }
 
+
 if (isset($_GET["loadfilefromserver"]))
 {
-    $serverfilename = $_GET["filename"];
-    $serverid       = $_GET["id"];
-    
-    $content = file_get_contents($SERVERHOST . $SERVERNAME . "/Setup/GetFile/$serverid/" . $serverfilename);
-    if ($content != "")
-    {
-        $filedir = explode("/", $serverfilename);
-        if (count($filedir) > 0)
-        {
-            CreatNewDir($filedir);
-        }
-        
-        file_put_contents($serverfilename, $content);
-        
-        echo "loadcomplite";
-    }
-    else
-    {
-        echo "loaderror";
-    }
+    $Setup = new Setup();
+    $Setup->loadfilefromserver($SERVERHOST, $SERVERNAME);
     unset($_SESSION["db_connect"]);
     exit(0);
 }
 
 if (isset($_GET["htaccess"]))
 {
-    if (file_exists("ht.access"))
-    {
-        unlink(".htaccess");
-        rename("ht.access", ".htaccess");
-    }
-    
-    if (file_exists("models/settings/ht.access"))
-    {
-        unlink("models/settings/.htaccess");
-        rename("models/settings/ht.access", "models/settings/.htaccess");
-    }
-    
-    echo "ok";
+    $Setup = new Setup();
+    $Setup->htaccess();
     unset($_SESSION["db_connect"]);
     exit(0);
 }
-
 
 if (isset($_POST["setconnectors"]))
 {
-    //
-    $serverdata = explode(":", $_POST["server"]);
-    
-    $Info = [
-        [ "database_type" => $_POST["database_type"] ],
-        [ "server" => $serverdata[0] ],
-        [ "database_name" => $_POST["database_name"] ],
-        [ "username" => $_POST["username"] ],
-        [ "password" => $_POST["password"] ],
-        [ "charset" => "utf8" ],
-    ];
-    
-    if (isset($serverdata[1]))
-    {
-        $Info[]["port"] = $serverdata[1];
-    }
-    
-    $data = [
-        "Name" => "connectionInfo",
-        "Info" => $Info,
-    ];
-    
-    $jsondata = json_encode($data, JSON_UNESCAPED_UNICODE);
-    $filepath = [ "models", "settings", "connectionInfo.json" ];
-    CreatNewDir($filepath);
-    file_put_contents(implode("/", $filepath), $jsondata);
-    
+    $Setup = new Setup();
+    $Setup->setconnectors();
     unset($_SESSION["db_connect"]);
     exit(0);
 }
-
 
 if (isset($_POST["testdb"]))
 {
-    //
-    $serverdata = explode(":", $_POST["server"]);
-    
-    $Info = [
-        "database_type" => $_POST["database_type"],
-        "server"        => $serverdata[0],
-        "database_name" => $_POST["database_name"],
-        "username"      => $_POST["username"],
-        "password"      => $_POST["password"],
-        "charset"       => "utf8",
-    ];
-    
-    if (isset($serverdata[1]))
-    {
-        $Info["port"] = $serverdata[1];
-    }
-    
-    $result = false;
-    
-    require_once 'autoload.php'; //подключаем автозагрузку доп.классов, система должна быть уже устновлена
-    
-    if (class_exists("db_connect"))
-    {
-        try
-        {
-            $db_connect                        = new db_connect($Info);
-            $_SESSION["i4b"]["connectionInfo"] = $Info;
-            $result                            = true;
-        }
-        catch (Exception $e)
-        {
-            $result = false;
-        }
-    }
-    
-    if (!$result)
-    {
-        header('HTTP/1.1 500 Internal Server Error');
-    }
-    
+    $Setup = new Setup();
+    $Setup->testdb();
     unset($_SESSION["db_connect"]);
     exit(0);
 }
-
 
 if (isset($_GET["installcore"]))
 {
-    
-    $result = false;
-    
-    require_once 'autoload.php'; //подключаем автозагрузку доп.классов, система должна быть уже устновлена
-    require_once 'settings.php'; //подключаем автозагрузку доп.классов
-    if (class_exists("System"))
-    {
-        $System  = new System();
-        $content = $System->UpdateSystem();
-        echo $content;
-        $result = true;
-    }
-    else
-    {
-        echo "CRITICAL ERROR, CORE NOT FOUND";
-    }
-    
-    if (!$result)
-    {
-        header('HTTP/1.1 500 Internal Server Error');
-    }
-    
+    $Setup = new Setup();
+    $Setup->installcore();
     unset($_SESSION["db_connect"]);
     exit(0);
 }
 
-
 if (isset($_POST["setsu"]))
 {
-    $result = false;
-    require_once 'autoload.php'; //подключаем автозагрузку доп.классов, система должна быть уже установлена
-    require_once 'settings.php'; //подключаем автозагрузку доп.классов
-    if (class_exists("Auth"))
-    {
-        $Auth = new Auth();
-        if ($Auth->havelogin($_POST["suusername"])["result"])
-        {
-            //$res = $Auth->moduser();
-            $res["result"] = true;
-        }
-        else
-        {
-            $res = $Auth->adduser($_POST["suusername"], $_POST["supassword"], true, 1);
-            
-        }
-        $result = $res["result"];
-    }
-    else
-    {
-        echo "CRITICAL ERROR, AUTH NOT FOUND";
-    }
-    
-    if (!$result)
-    {
-        header('HTTP/1.1 500 Internal Server Error');
-    }
-    else
-    {
-        header('HTTP/1.1 200 OK');
-        print_r("ok");
-    }
-    
+    $Setup = new Setup();
+    $Setup->setsu();
     unset($_SESSION["db_connect"]);
     exit(0);
 }
 
 if (isset($_POST["finish"]))
 {
-    unlink("setup.php");
-    if (file_exists("setup.php"))
-    {
-        $result = false;
-    }
-    else
-    {
-        $result = true;
-    }
-    
-    if (!$result)
-    {
-        header('HTTP/1.1 500 Internal Server Error');
-    }
-    
+    $Setup = new Setup();
+    $Setup->finish();
     unset($_SESSION["db_connect"]);
     exit(0);
 }
 
-
 ?>
-
-
 <!doctype html>
-<html lang="en">
+<html lang="ru">
 
 <meta http-equiv="content-type" content="text/html;charset=UTF-8" />
 <head>
@@ -453,11 +484,11 @@ if (isset($_POST["finish"]))
                                             <small>Setup SU</small>
                                         </a>
                                     </li>
-                                    <!--                                    <li>-->
-                                    <!--                                        <a href="#step-6">Addon<br/>-->
-                                    <!--                                            <small>Install Addon</small>-->
-                                    <!--                                        </a>-->
-                                    <!--                                    </li>-->
+                                    <li>
+                                        <a href="#step-6">Addons<br/>
+                                            <small>Install Addons</small>
+                                        </a>
+                                    </li>
                                     <li>
                                         <a href="#step-7">Finish<br />
                                             <small>End Install</small>
@@ -525,8 +556,7 @@ if (isset($_POST["finish"]))
                                     <div id="step-2" class="">
                                         <div class="card-body">
                                             <a id="loadfiles" class="mb-2 mr-2 btn-hover-shine btn btn-primary">Load files for install</a>
-                                            <table id="filestable" class="table table-striped table-bordered"
-                                                   style="width:100%">
+                                            <table id="filestable" class="table table-striped table-bordered" style="width:100%">
                                                 <thead>
                                                 <tr>
                                                     <td>Check</td>
@@ -653,11 +683,12 @@ if (isset($_POST["finish"]))
                                             </form>
                                         </div>
                                     </div>
-                                    <!--                                    <div id="step-6" class="">-->
-                                    <!--                                        <div class="card-body">-->
-                                    <!--                                            <h2>Select Addons</h2>-->
-                                    <!--                                        </div>-->
-                                    <!--                                    </div>-->
+                                    <div id="step-6" class="">
+                                        <div class="card-body">
+                                            <h2>Select Addons</h2>
+                                            
+                                        </div>
+                                    </div>
                                     <div id="step-7" class="">
                                         <div class="card-body">
                                             <h2>CONGRATULATIONS!!!</h2>
@@ -678,10 +709,7 @@ if (isset($_POST["finish"]))
 
     </div>
 </div>
-<script type="text/javascript"
-        src="https://cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js"></script>
-
-
+<script type="text/javascript" src="https://cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js"></script>
 <script>
     var x                = window.location;
     var servername       = x.origin;
@@ -1010,7 +1038,6 @@ if (isset($_POST["finish"]))
     $(document).ready(Model.OnLoad);
 
 </script>
-
 </body>
 </html>
 
