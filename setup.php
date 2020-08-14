@@ -143,9 +143,9 @@ class Setup
         
         require_once 'autoload.php'; //подключаем автозагрузку доп.классов, система должна быть уже устновлена
         require_once 'settings.php'; //подключаем автозагрузку доп.классов
-        if (class_exists("System"))
+        if (class_exists("SystemM"))
         {
-            $System  = new System();
+            $System  = new SystemM();
             $content = $System->UpdateSystem();
             echo $content;
             $result = true;
