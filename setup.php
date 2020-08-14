@@ -1023,7 +1023,7 @@ if (isset($_POST["finish"]))
             var p        = $.post(servername + "/setup.php", FormData);
             p.done(function (data)
             {
-                document.location = servername;
+                document.location = servername+'/demoindex.php';
             });
             p.fail(function (data)
             {
